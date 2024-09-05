@@ -1,13 +1,11 @@
 const Discord = require('discord.js');
-const ytdl = require('ytdl-core-discord');
+const keep_alive = require('./keep_alive.js')
+const play = require('play-dl');
 const https = require('https');
 const http = require('http');
-const yts = require('yt-search');
-const { VoiceConnectionStatus } = require('@discordjs/voice');
 const { EmbedBuilder } = require('discord.js');
-const { getVoiceConnection } = require('@discordjs/voice');
 const { Client, GatewayIntentBits } = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, createAudioResource } = require('@discordjs/voice');
+const { createAudioPlayer, createAudioResource, StreamType, demuxProbe, joinVoiceChannel, NoSubscriberBehavior, AudioPlayerStatus, VoiceConnectionStatus, getVoiceConnection } = require('@discordjs/voice')
 const music = require('@discordjs/voice');
 const { addSpeechEvent, SpeechEvents } = require("discord-speech-recognition");
 const { getInfo } = require('discord-ytdl-core');
@@ -27,6 +25,14 @@ const PREFIX = "+";
 
 var connectionMap = new Object();
 
+play.getFreeClientID().then((clientID) => {
+  play.setToken({
+    soundcloud: {
+      client_id: clientID
+    }
+  })
+})
+
 
 bot.on('ready', () => {
   console.log('bot online');
@@ -35,21 +41,24 @@ bot.on('ready', () => {
 bot.on(SpeechEvents.speech, async (msg) => {
   // If bot didn't recognize speech, content will be empty
   if (!msg.content) return;
-  msg.author.send(msg.content);
   if (msg.content.toLowerCase().indexOf("reader") == -1) return;
   var command = msg.content.substring(msg.content.toLowerCase().indexOf("reader") + 6).toLowerCase();
   if (command.indexOf("play") != -1) {
     const v = await realvideosearch(command.substring(command.indexOf("play") + 4));
-    var newvid = 'https://www.youtube.com/watch?v=' + v.videoId;
+    var newvid = v.url;
     if (connectionMap[msg.guild.id] != null) {
-      msg.author.send(newvid);
       connectionMap[msg.guild.id][1].push(newvid);
       if (connectionMap[msg.guild.id][2] == "null") {
-        connectionMap[msg.guild.id][2] = createAudioPlayer();
+        connectionMap[msg.guild.id][2] = createAudioPlayer({
+          behaviors: {
+            noSubscriber: NoSubscriberBehavior.Play
+          }
+        })
         connectionMap[msg.guild.id][2].on('connectionCreate', (queue) => {
           queue.connection.voiceConnection.on('stateChange', (oldState, newState) => {
             if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Connecting) {
               queue.connection.voiceConnection.configureNetworking();
+              console.log("interesting connection")
             }
           })
         });
@@ -102,7 +111,11 @@ function startVoiceConnection(msg, startPlayer, startingQue) {
   connectionMap[msg.guild.id].push("null")
   if (startPlayer) {
     connectionMap[msg.guild.id][1].push(startingQue);
-    connectionMap[msg.guild.id][2] = createAudioPlayer();
+    connectionMap[msg.guild.id][2] = createAudioPlayer({
+      behaviors: {
+        noSubscriber: NoSubscriberBehavior.Play
+      }
+    })
     connectionMap[msg.guild.id][2].on('connectionCreate', (queue) => {
       queue.connection.voiceConnection.on('stateChange', (oldState, newState) => {
         if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Connecting) {
@@ -147,7 +160,7 @@ bot.on('messageCreate', message => {
         }
       case 'play':
         if (!args[1] && args[0] == "play") {
-          message.channel.send('give me a yt link dumbass');
+          message.channel.send('give me a soundcloud link dumbass');
           return;
         }
 
@@ -156,7 +169,7 @@ bot.on('messageCreate', message => {
           return;
         }
         else if (args[0] == "play") {
-          if (ytdl.validateURL(args[1])) {
+          if (play.so_validate(args[1]) === 'track') {
             if (connectionMap[message.guild.id] != null) {
               connectionMap[message.guild.id][1].push(args[1]);
             }
@@ -305,23 +318,41 @@ async function statsSearch(xml, statsMSG, steamLink) {
   });
 }
 async function realvideosearch(t) {
-  const r = await yts(t);
-  var vids = r.videos.slice(0, 3);
-  return vids[0];
+  const searchResults = await play.search(t, {
+    source: { soundcloud: "tracks" }  // Limit the search to SoundCloud tracks
+  });
+
+  // Return the first result (You can modify this logic to suit your needs)
+  if (searchResults.length > 0) {
+    return searchResults[0];  // Returns the first result from the search
+  } else {
+    throw new Error('No results found on SoundCloud.');
+  }
 }
 async function videosearch(t, msg) {
-  const r = await yts(t);
-  vids = r.videos.slice(0, 3);
+  const searchResults = await play.search(t, {
+    source: { soundcloud: "tracks" }  // Limit the search to SoundCloud tracks
+  });
 
-  var num = 1;
-  vids.forEach(function(v) {
-    msg.channel.send(num + '. ' + `${v.title} (${v.timestamp}) | ${v.author.name}`);
+  // Limit results to 3 (you can change this if needed)
+  const results = searchResults.slice(0, 3);
+
+  if (results.length === 0) {
+    msg.channel.send('No results found on SoundCloud.');
+    return;
+  }
+
+  let num = 1;
+  results.forEach(track => {
+    msg.channel.send(`${num}. ${track.name} | by ${track.publisher.artist}`);
     num++;
-  })
+  });
+
+  // Store the search results so you can play them later
+  vids = results;
+
+  // Prompt the user to select one of the search results
   playingthings(msg);
-
-
-  return;
 
 }
 
@@ -329,11 +360,15 @@ function playingthings(msg) {
   bot.on('messageCreate', async (m) => {
     if (msg.author.id == m.author.id) {
       if (m.content == '1') {
-        var newvid = 'https://www.youtube.com/watch?v=' + vids[0].videoId;
+        var newvid = vids[0].url;
         if (connectionMap[msg.guild.id] != null) {
           connectionMap[msg.guild.id][1].push(newvid);
           if (connectionMap[msg.guild.id][2] == "null") {
-            connectionMap[msg.guild.id][2] = createAudioPlayer();
+            connectionMap[msg.guild.id][2] = createAudioPlayer({
+              behaviors: {
+                noSubscriber: NoSubscriberBehavior.Play
+              }
+            })
             connectionMap[msg.guild.id][2].on('connectionCreate', (queue) => {
               queue.connection.voiceConnection.on('stateChange', (oldState, newState) => {
                 if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Connecting) {
@@ -361,11 +396,15 @@ function playingthings(msg) {
         return;
       }
       else if (m.content == '2') {
-        var newvid = 'https://www.youtube.com/watch?v=' + vids[1].videoId;
+        var newvid = vids[1].url;
         if (connectionMap[msg.guild.id] != null) {
           connectionMap[msg.guild.id][1].push(newvid);
           if (connectionMap[msg.guild.id][2] == "null") {
-            connectionMap[msg.guild.id][2] = createAudioPlayer();
+            connectionMap[msg.guild.id][2] = createAudioPlayer({
+              behaviors: {
+                noSubscriber: NoSubscriberBehavior.Play
+              }
+            })
             connectionMap[msg.guild.id][2].on('connectionCreate', (queue) => {
               queue.connection.voiceConnection.on('stateChange', (oldState, newState) => {
                 if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Connecting) {
@@ -393,11 +432,15 @@ function playingthings(msg) {
         return;
       }
       else if (m.content == '3') {
-        var newvid = 'https://www.youtube.com/watch?v=' + vids[2].videoId;
+        var newvid = vids[2].url;
         if (connectionMap[msg.guild.id] != null) {
           connectionMap[msg.guild.id][1].push(newvid);
           if (connectionMap[msg.guild.id][2] == "null") {
-            connectionMap[msg.guild.id][2] = createAudioPlayer();
+            connectionMap[msg.guild.id][2] = createAudioPlayer({
+              behaviors: {
+                noSubscriber: NoSubscriberBehavior.Play
+              }
+            })
             connectionMap[msg.guild.id][2].on('connectionCreate', (queue) => {
               queue.connection.voiceConnection.on('stateChange', (oldState, newState) => {
                 if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Connecting) {
@@ -436,19 +479,26 @@ async function queue(message) {
   }
   message.channel.send('Queue: ');
   for (i = 0; i < connectionMap[message.guild.id][1].length; i++) {
-    const info = await ytdl.getInfo(connectionMap[message.guild.id][1][i]);
-    message.channel.send((i + 1) + '. ' + info.videoDetails.title);
+    message.channel.send((i + 1) + '. ' + connectionMap[message.guild.id][1][i]);
   }
 
 }
 
 async function next(mt) {
   if (mt != null) {
-    var stream = await ytdl(connectionMap[mt.guild.id][1][0], { filter: 'audioonly', type: 'opus', highWaterMark: 1 << 25 });
-    console.log('streaming');
-    const resource = createAudioResource(stream);
-    connectionMap[mt.guild.id][0].subscribe(connectionMap[mt.guild.id][2]);
+
+    var stream = await play.stream(connectionMap[mt.guild.id][1][0], { quality: 2 });
+    console.log(connectionMap[mt.guild.id][1][0]);
+
+    const resource = createAudioResource(stream.stream, {
+      inputType: stream.type
+    })
+
     connectionMap[mt.guild.id][2].play(resource);
+    console.log('playing');
+    connectionMap[mt.guild.id][0].subscribe(connectionMap[mt.guild.id][2]);
+    console.log('subscribed');
+
     connectionMap[mt.guild.id][1].shift()
   }
 }
