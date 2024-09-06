@@ -344,7 +344,8 @@ async function videosearch(t, msg) {
 
   let num = 1;
   results.forEach(track => {
-    msg.channel.send(`${num}. ${track.name} | by ${track.publisher.artist}`);
+    var artist = track.publisher.artist != null ? track.publisher.artist : "unknown"
+    msg.channel.send(`${num}. ${track.name} | by ${artist}`);
     num++;
   });
 
@@ -479,7 +480,8 @@ async function queue(message) {
   }
   message.channel.send('Queue: ');
   for (i = 0; i < connectionMap[message.guild.id][1].length; i++) {
-    message.channel.send((i + 1) + '. ' + connectionMap[message.guild.id][1][i]);
+    let trackname = await play.soundcloud(connectionMap[message.guild.id][1][i]).name;
+    message.channel.send((i + 1) + '. ' + trackname);
   }
 
 }
