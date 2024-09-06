@@ -480,7 +480,8 @@ async function queue(message) {
   }
   message.channel.send('Queue: ');
   for (i = 0; i < connectionMap[message.guild.id][1].length; i++) {
-    let trackname = await play.soundcloud(connectionMap[message.guild.id][1][i]).name;
+    let trackname = (await play.soundcloud(connectionMap[message.guild.id][1][i])).name;
+    console.log(trackname);
     message.channel.send((i + 1) + '. ' + trackname);
   }
 
@@ -488,9 +489,7 @@ async function queue(message) {
 
 async function next(mt) {
   if (mt != null) {
-
     var stream = await play.stream(connectionMap[mt.guild.id][1][0], { quality: 2 });
-    console.log(connectionMap[mt.guild.id][1][0]);
 
     const resource = createAudioResource(stream.stream, {
       inputType: stream.type
