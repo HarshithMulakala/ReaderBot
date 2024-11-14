@@ -344,7 +344,7 @@ async function videosearch(t, msg) {
 
   let num = 1;
   results.forEach(track => {
-    var artist = track.publisher.artist != null ? track.publisher.artist : "unknown"
+    var artist = (track.publisher && track.publisher.artist) != null ? track.publisher.artist : "unknown"
     msg.channel.send(`${num}. ${track.name} | by ${artist}`);
     num++;
   });
