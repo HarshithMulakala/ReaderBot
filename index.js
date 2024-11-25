@@ -69,7 +69,7 @@ bot.on(SpeechEvents.speech, async (msg) => {
                             connectionMap[msg.guild.id] = null;
                         }
                         else {
-                            next(msg);
+                            setTimeout(() => next(mt), 1000);
                         }
                     });
                     next(msg);
@@ -135,7 +135,7 @@ function startVoiceConnection(msg, startPlayer, startingQue) {
                 connectionMap[msg.guild.id] == null;
             }
             else {
-                next(msg);
+                setTimeout(() => next(mt), 1000);
             }
         });
     }
@@ -365,10 +365,14 @@ async function videosearch(t, msg) {
 }
 
 function playingthings(msg) {
-    const filter = (m) => m.author.id === msg.author.id && ['1', '2', '3'].includes(m.content);
+    const filter = (m) => m.author.id === msg.author.id;
     const collector = msg.channel.createMessageCollector({ filter, max: 1, time: 10000 });
 
     collector.on('collect', async (m) => {
+        if(!['1', '2', '3'].includes(m.content)){
+            collector.stop();
+            msg.channel.send("User did not select choice!");
+        }
         const choice = parseInt(m.content, 10);
         const newvid = vids[choice - 1]?.url;
 
@@ -391,7 +395,7 @@ function playingthings(msg) {
                         connectionMap[msg.guild.id][0].destroy();
                         connectionMap[msg.guild.id] = null;
                     } else {
-                        next(msg);
+                        setTimeout(() => next(mt), 1000);
                     }
                 });
 
@@ -426,7 +430,7 @@ async function queue(message) {
 
 async function next(mt) {
     if (mt != null) {
-        var stream = await play.stream(connectionMap[mt.guild.id][1][0], { quality: 2 });
+        var stream = await play.stream(connectionMap[mt.guild.id][1][0], { quality: 2, seek: 0 });
 
         const resource = createAudioResource(stream.stream, {
             inputType: stream.type
