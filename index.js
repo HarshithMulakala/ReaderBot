@@ -116,6 +116,16 @@ function startVoiceConnection(msg, startPlayer, startingQue) {
         guildId: msg.guild.id,
         adapterCreator: msg.guild.voiceAdapterCreator,
     }));
+    connectionMap[msg.guild.id][0].on(VoiceConnectionStatus.Disconnected, async () => {
+        console.log(`Disconnected from voice channel in guild: ${msg.guild.id}`);
+        if (
+            connectionMap[msg.guild.id][0] &&
+            connectionMap[msg.guild.id][0].state.status !== VoiceConnectionStatus.Destroyed
+        ) {
+            connectionMap[msg.guild.id][0].destroy();
+        }
+        connectionMap[msg.guild.id] = null;
+    });
     connectionMap[msg.guild.id].push([])
     connectionMap[msg.guild.id].push(null)
     if (startPlayer) {
@@ -447,12 +457,6 @@ async function next(mt) {
         })
 
         connectionMap[mt.guild.id][2].play(resource);
-        stream.stream.on('end', () => {
-            console.log('Stream ended');
-        });
-        stream.stream.on('close', () => {
-            console.log('Stream closed');
-        });
         connectionMap[mt.guild.id][0].subscribe(connectionMap[mt.guild.id][2]);
         connectionMap[mt.guild.id][1].shift();
     }
