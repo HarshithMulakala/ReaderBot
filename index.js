@@ -72,6 +72,9 @@ bot.on(SpeechEvents.speech, async (msg) => {
                             next(msg);
                         }
                     });
+                    connectionMap[msg.guild.id][2].on('error', error => {
+                        console.error(`AudioPlayer Error: ${error.message}`);
+                    });
                     next(msg);
                 }
             }
@@ -137,6 +140,9 @@ function startVoiceConnection(msg, startPlayer, startingQue) {
             else {
                 next(msg);
             }
+        });
+        connectionMap[msg.guild.id][2].on('error', error => {
+            console.error(`AudioPlayer Error: ${error.message}`);
         });
     }
 }
@@ -399,6 +405,10 @@ function playingthings(msg) {
                     }
                 });
 
+                connectionMap[msg.guild.id][2].on('error', error => {
+                    console.error(`AudioPlayer Error: ${error.message}`);
+                });
+
                 next(msg);
             }
         } else if (msg.member.voice.channel.id) {
@@ -422,7 +432,6 @@ async function queue(message) {
     message.channel.send('Queue: ');
     for (i = 0; i < connectionMap[message.guild.id][1].length; i++) {
         let trackname = (await play.soundcloud(connectionMap[message.guild.id][1][i])).name;
-        console.log(trackname);
         message.channel.send((i + 1) + '. ' + trackname);
     }
 
@@ -430,18 +439,26 @@ async function queue(message) {
 
 async function next(mt) {
     if (mt != null) {
-        var stream = await play.stream(connectionMap[mt.guild.id][1][0], { quality: 2, seek: 0 });
+        var stream = await play.stream(connectionMap[mt.guild.id][1][0], { quality: 0 });
 
         const resource = createAudioResource(stream.stream, {
-            inputType: stream.type
+            inputType: stream.type || StreamType.Arbitrary
         })
 
         connectionMap[mt.guild.id][2].play(resource);
-        console.log('playing');
         connectionMap[mt.guild.id][0].subscribe(connectionMap[mt.guild.id][2]);
-        console.log('subscribed');
+        stream.stream.on('close', () => {
+            console.log('Stream closed unexpectedly.');
+        });
 
-        connectionMap[mt.guild.id][1].shift()
+        stream.stream.on('end', () => {
+            console.log('Stream ended naturally.');
+        });
+
+        stream.stream.on('error', error => {
+            console.error(`Stream Error: ${error.message}`);
+        });
+        connectionMap[mt.guild.id][1].shift();
     }
 }
 
