@@ -1,19 +1,11 @@
-# Discord.js
+## Discord VOICE CONTROLLED Music Bot, Counter Strike Stats, and MORE!
 
-Discord.js is a JavaScript library that allows developers to interact with the Discord API. It allows developers to create bots and automate tasks on a Discord server. The library provides an easy-to-use interface for interacting with the Discord API, including functionality for sending and receiving messages, managing server members, and more. It uses an event-based system, which means that bots can respond to events such as message or voice state updates, and take actions based on those events.
+Use +join for bot to join your voice channel and then in voice chat say "Reader Play ____ ". ( ____ being the name of the song you want to be played) and the bot will play it for you. If music is already being played the song requested will be added to queue. Saying "Reader Skip" will go the next song in queue and saying "Reader Stop" will clear the queue and disconnect the bot.
 
-# Template
-
-**Name** : Discord.js
-
-**Description** : Discord.js bot, that uses the v.14!
-
-# Errors/Feedback
-
-If you found any error feel free to do any of these things : 
-
-- Comment on the template
-- DM me on Discord
-- Mail me at Hugoonreplit@gmail.com
-
-All errors/feedback is appreciated!
+## Commands:
++play ____ (____ being the name of the song) - Gives you three options labeled 1, 2, 3 of songs matching your keyword/name then type 1, 2, or 3 to choose the song you want played/added to queue.
++join - Joins the VC the current user is in unless already in a VC
++queue - Shows the current queue
++skip - Skips to the next song in queue or disconnects if nothing left
++stop - Clears the queue and disconnects the bot
++tracker ___ (___ being a steam profile link) - Gives CS2 stats of the given steam profile
