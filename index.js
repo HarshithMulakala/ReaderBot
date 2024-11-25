@@ -378,6 +378,7 @@ function playingthings(msg) {
         if(!['1', '2', '3'].includes(m.content)){
             collector.stop();
             msg.channel.send("User did not select choice!");
+            return;
         }
         const choice = parseInt(m.content, 10);
         const newvid = vids[choice - 1]?.url;
@@ -446,6 +447,12 @@ async function next(mt) {
         })
 
         connectionMap[mt.guild.id][2].play(resource);
+        stream.stream.on('end', () => {
+            console.log('Stream ended');
+        });
+        stream.stream.on('close', () => {
+            console.log('Stream closed');
+        });
         connectionMap[mt.guild.id][0].subscribe(connectionMap[mt.guild.id][2]);
         connectionMap[mt.guild.id][1].shift();
     }
