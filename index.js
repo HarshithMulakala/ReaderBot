@@ -126,6 +126,13 @@ function startVoiceConnection(msg, startPlayer, startingQue) {
         }
         connectionMap[msg.guild.id] = null;
     });
+    connectionMap[msg.guild.id][0].on('stateChange', (oldState, newState) => {
+        if (newState.status === VoiceConnectionStatus.Destroyed) {
+            console.log(`Voice connection destroyed in guild: ${msg.guild.id}`);
+            // Cleanup the connection map entry
+            connectionMap[msg.guild.id] = null;
+        }
+    });
     connectionMap[msg.guild.id].push([])
     connectionMap[msg.guild.id].push(null)
     if (startPlayer) {
