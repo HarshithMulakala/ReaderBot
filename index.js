@@ -64,7 +64,7 @@ bot.on(SpeechEvents.speech, async (msg) => {
                         })
                     });
                     connectionMap[msg.guild.id][2].on(music.AudioPlayerStatus.Idle, () => {
-                        if (connectionMap[msg.guild.id][1].length == 0) {
+                        if (connectionMap[msg.guild.id] && connectionMap[msg.guild.id][1] && connectionMap[msg.guild.id][1].length === 0) {
                             connectionMap[msg.guild.id][0].destroy();
                             connectionMap[msg.guild.id] = null;
                         }
@@ -133,7 +133,7 @@ function startVoiceConnection(msg, startPlayer, startingQue) {
             })
         });
         connectionMap[msg.guild.id][2].on(music.AudioPlayerStatus.Idle, () => {
-            if (connectionMap[msg.guild.id][1].length == 0) {
+            if (connectionMap[msg.guild.id] && connectionMap[msg.guild.id][1] && connectionMap[msg.guild.id][1].length === 0) {
                 connectionMap[msg.guild.id][0].destroy();
                 connectionMap[msg.guild.id] == null;
             }
@@ -397,7 +397,7 @@ function playingthings(msg) {
                 });
 
                 connectionMap[msg.guild.id][2].on(music.AudioPlayerStatus.Idle, () => {
-                    if (connectionMap[msg.guild.id][1].length === 0) {
+                    if (connectionMap[msg.guild.id] && connectionMap[msg.guild.id][1] && connectionMap[msg.guild.id][1].length === 0) {
                         connectionMap[msg.guild.id][0].destroy();
                         connectionMap[msg.guild.id] = null;
                     } else {
@@ -442,7 +442,7 @@ async function next(mt) {
         var stream = await play.stream(connectionMap[mt.guild.id][1][0], { quality: 0 });
 
         const resource = createAudioResource(stream.stream, {
-            inputType: StreamType.Raw
+            inputType: stream.type
         })
 
         connectionMap[mt.guild.id][2].play(resource);
