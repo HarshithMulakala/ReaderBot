@@ -456,7 +456,7 @@ async function queue(message) {
 }
 
 async function next(mt) {
-    if (mt != null && connectionMap[msg.guild.id] && connectionMap[msg.guild.id][1]) {
+    if (mt != null && connectionMap[mt.guild.id] && connectionMap[mt.guild.id][1]) {
         var stream = await play.stream(connectionMap[mt.guild.id][1][0], { quality: 0 });
 
         const resource = createAudioResource(stream.stream, {
