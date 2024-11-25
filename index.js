@@ -100,6 +100,9 @@ bot.on(SpeechEvents.speech, async (msg) => {
         return;
     } catch (error) {
         console.log("Error:" + error);
+        if (connectionMap[msg.guild.id] != null) {
+                connectionMap[msg.guild.id] = null;
+        }
     }
 });
 
@@ -245,6 +248,9 @@ bot.on('messageCreate', message => {
         }
     } catch (error) {
         console.log("Error:" + error);
+        if (connectionMap[msg.guild.id] != null) {
+                connectionMap[msg.guild.id] = null;
+        }
     }
 
 });
