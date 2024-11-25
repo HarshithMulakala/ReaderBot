@@ -442,22 +442,11 @@ async function next(mt) {
         var stream = await play.stream(connectionMap[mt.guild.id][1][0], { quality: 0 });
 
         const resource = createAudioResource(stream.stream, {
-            inputType: stream.type || StreamType.Arbitrary
+            inputType: StreamType.Raw
         })
 
         connectionMap[mt.guild.id][2].play(resource);
         connectionMap[mt.guild.id][0].subscribe(connectionMap[mt.guild.id][2]);
-        stream.stream.on('close', () => {
-            console.log('Stream closed unexpectedly.');
-        });
-
-        stream.stream.on('end', () => {
-            console.log('Stream ended naturally.');
-        });
-
-        stream.stream.on('error', error => {
-            console.error(`Stream Error: ${error.message}`);
-        });
         connectionMap[mt.guild.id][1].shift();
     }
 }
