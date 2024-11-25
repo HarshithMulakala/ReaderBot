@@ -49,7 +49,7 @@ bot.on(SpeechEvents.speech, async (msg) => {
             var newvid = v.url;
             if (connectionMap[msg.guild.id] != null) {
                 connectionMap[msg.guild.id][1].push(newvid);
-                if (connectionMap[msg.guild.id][2] == "null") {
+                if (connectionMap[msg.guild.id][2] == null) {
                     connectionMap[msg.guild.id][2] = createAudioPlayer({
                         behaviors: {
                             noSubscriber: NoSubscriberBehavior.Play
@@ -69,7 +69,7 @@ bot.on(SpeechEvents.speech, async (msg) => {
                             connectionMap[msg.guild.id] = null;
                         }
                         else {
-                            setTimeout(() => next(mt), 1000);
+                            next(msg);
                         }
                     });
                     next(msg);
@@ -114,7 +114,7 @@ function startVoiceConnection(msg, startPlayer, startingQue) {
         adapterCreator: msg.guild.voiceAdapterCreator,
     }));
     connectionMap[msg.guild.id].push([])
-    connectionMap[msg.guild.id].push("null")
+    connectionMap[msg.guild.id].push(null)
     if (startPlayer) {
         connectionMap[msg.guild.id][1].push(startingQue);
         connectionMap[msg.guild.id][2] = createAudioPlayer({
@@ -135,7 +135,7 @@ function startVoiceConnection(msg, startPlayer, startingQue) {
                 connectionMap[msg.guild.id] == null;
             }
             else {
-                setTimeout(() => next(mt), 1000);
+                next(msg);
             }
         });
     }
@@ -383,7 +383,7 @@ function playingthings(msg) {
 
         if (connectionMap[msg.guild.id]) {
             connectionMap[msg.guild.id][1].push(newvid);
-            if (connectionMap[msg.guild.id][2] === "null") {
+            if (connectionMap[msg.guild.id][2] == null) {
                 connectionMap[msg.guild.id][2] = createAudioPlayer({
                     behaviors: {
                         noSubscriber: NoSubscriberBehavior.Play
@@ -395,7 +395,7 @@ function playingthings(msg) {
                         connectionMap[msg.guild.id][0].destroy();
                         connectionMap[msg.guild.id] = null;
                     } else {
-                        setTimeout(() => next(mt), 1000);
+                        next(msg);
                     }
                 });
 
