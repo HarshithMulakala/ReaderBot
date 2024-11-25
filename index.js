@@ -99,10 +99,7 @@ bot.on(SpeechEvents.speech, async (msg) => {
 
         return;
     } catch (error) {
-        if (connectionMap[msg.guild.id] != null) {
-            connectionMap[msg.guild.id][0].destroy();
-            connectionMap[msg.guild.id] = null;
-        }
+        console.log("Error:" + error);
     }
 });
 
@@ -217,13 +214,6 @@ bot.on('messageCreate', message => {
                     }
 
                     break;
-                case 'pray':
-                    message.channel.send('bismillah wallahi astaghfirullah isalamek asalam alaykum allahu akbar');
-
-                    break;
-                case 'prayA':
-                    message.channel.send('بسم الله ربي استغفر الله اسلامك' + ' اسلامك السلام عليكم الله اكبر');
-                    break;
                 case 'tracker':
                     if (!args[1]) {
                         message.channel.send("Give Steam Profile Link")
@@ -254,10 +244,7 @@ bot.on('messageCreate', message => {
             }
         }
     } catch (error) {
-        if (connectionMap[msg.guild.id] != null) {
-            connectionMap[msg.guild.id][0].destroy();
-            connectionMap[msg.guild.id] = null;
-        }
+        console.log("Error:" + error);
     }
 
 });
