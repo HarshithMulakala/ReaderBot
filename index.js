@@ -448,4 +448,4 @@ async function next(mt) {
     }
 }
 
-bot.login('mySecret');
+bot.login(mySecret);
