@@ -167,7 +167,7 @@ bot.on('messageCreate', message => {
                     }
                 case 'play':
                     if (!args[1] && args[0] == "play") {
-                        message.channel.send('give me a soundcloud link dumbass');
+                        message.channel.send('give me a song name');
                         return;
                     }
 
@@ -372,118 +372,48 @@ async function videosearch(t, msg) {
 }
 
 function playingthings(msg) {
-    bot.on('messageCreate', async (m) => {
-        if (msg.author.id == m.author.id) {
-            if (m.content == '1') {
-                var newvid = vids[0].url;
-                if (connectionMap[msg.guild.id] != null) {
-                    connectionMap[msg.guild.id][1].push(newvid);
-                    if (connectionMap[msg.guild.id][2] == "null") {
-                        connectionMap[msg.guild.id][2] = createAudioPlayer({
-                            behaviors: {
-                                noSubscriber: NoSubscriberBehavior.Play
-                            }
-                        })
-                        connectionMap[msg.guild.id][2].on('connectionCreate', (queue) => {
-                            queue.connection.voiceConnection.on('stateChange', (oldState, newState) => {
-                                if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Connecting) {
-                                    queue.connection.voiceConnection.configureNetworking();
-                                }
-                            })
-                        });
-                        connectionMap[msg.guild.id][2].on(music.AudioPlayerStatus.Idle, () => {
-                            if (connectionMap[msg.guild.id][1].length == 0) {
-                                connectionMap[msg.guild.id][0].destroy();
-                                connectionMap[msg.guild.id] = null;
-                            }
-                            else {
-                                next(msg);
-                            }
-                        });
-                        next(msg);
-                    }
-                    return;
-                }
-                if (connectionMap[msg.guild.id] == null & m.member.voice.channel.id != null) {
-                    startVoiceConnection(msg, true, newvid)
-                    next(msg);
-                }
-                return;
-            }
-            else if (m.content == '2') {
-                var newvid = vids[1].url;
-                if (connectionMap[msg.guild.id] != null) {
-                    connectionMap[msg.guild.id][1].push(newvid);
-                    if (connectionMap[msg.guild.id][2] == "null") {
-                        connectionMap[msg.guild.id][2] = createAudioPlayer({
-                            behaviors: {
-                                noSubscriber: NoSubscriberBehavior.Play
-                            }
-                        })
-                        connectionMap[msg.guild.id][2].on('connectionCreate', (queue) => {
-                            queue.connection.voiceConnection.on('stateChange', (oldState, newState) => {
-                                if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Connecting) {
-                                    queue.connection.voiceConnection.configureNetworking();
-                                }
-                            })
-                        });
-                        connectionMap[msg.guild.id][2].on(music.AudioPlayerStatus.Idle, () => {
-                            if (connectionMap[msg.guild.id][1].length == 0) {
-                                connectionMap[msg.guild.id][0].destroy();
-                                connectionMap[msg.guild.id] = null;
-                            }
-                            else {
-                                next(msg);
-                            }
-                        });
-                        next(msg);
-                    }
-                    return;
-                }
-                if (connectionMap[msg.guild.id] == null & m.member.voice.channel.id != null) {
-                    startVoiceConnection(msg, true, newvid)
-                    next(msg);
-                }
-                return;
-            }
-            else if (m.content == '3') {
-                var newvid = vids[2].url;
-                if (connectionMap[msg.guild.id] != null) {
-                    connectionMap[msg.guild.id][1].push(newvid);
-                    if (connectionMap[msg.guild.id][2] == "null") {
-                        connectionMap[msg.guild.id][2] = createAudioPlayer({
-                            behaviors: {
-                                noSubscriber: NoSubscriberBehavior.Play
-                            }
-                        })
-                        connectionMap[msg.guild.id][2].on('connectionCreate', (queue) => {
-                            queue.connection.voiceConnection.on('stateChange', (oldState, newState) => {
-                                if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Connecting) {
-                                    queue.connection.voiceConnection.configureNetworking();
-                                }
-                            })
-                        });
-                        connectionMap[msg.guild.id][2].on(music.AudioPlayerStatus.Idle, () => {
-                            if (connectionMap[msg.guild.id][1].length == 0) {
-                                connectionMap[msg.guild.id][0].destroy();
-                                connectionMap[msg.guild.id] = null;
-                            }
-                            else {
-                                next(msg);
-                            }
-                        });
-                        next(msg);
-                    }
-                    return;
-                }
-                if (connectionMap[msg.guild.id] == null & m.member.voice.channel.id != null) {
-                    startVoiceConnection(msg, true, newvid)
-                    next(msg);
-                }
-                return;
-            }
+    const filter = (m) => m.author.id === msg.author.id && ['1', '2', '3'].includes(m.content);
+    const collector = msg.channel.createMessageCollector({ filter, max: 1, time: 10000 });
+
+    collector.on('collect', async (m) => {
+        const choice = parseInt(m.content, 10);
+        const newvid = vids[choice - 1]?.url;
+
+        if (!newvid) {
+            msg.channel.send('Invalid choice or no video available.');
+            return;
         }
-        return;
+
+        if (connectionMap[msg.guild.id]) {
+            connectionMap[msg.guild.id][1].push(newvid);
+            if (connectionMap[msg.guild.id][2] === "null") {
+                connectionMap[msg.guild.id][2] = createAudioPlayer({
+                    behaviors: {
+                        noSubscriber: NoSubscriberBehavior.Play
+                    }
+                });
+
+                connectionMap[msg.guild.id][2].on(music.AudioPlayerStatus.Idle, () => {
+                    if (connectionMap[msg.guild.id][1].length === 0) {
+                        connectionMap[msg.guild.id][0].destroy();
+                        connectionMap[msg.guild.id] = null;
+                    } else {
+                        next(msg);
+                    }
+                });
+
+                next(msg);
+            }
+        } else if (msg.member.voice.channel.id) {
+            startVoiceConnection(msg, true, newvid);
+            next(msg);
+        }
+    });
+
+    collector.on('end', (collected) => {
+        if (collected.size === 0) {
+            msg.channel.send('No response received, canceling selection.');
+        }
     });
 }
 
@@ -518,4 +448,4 @@ async function next(mt) {
     }
 }
 
-bot.login(mySecret);
+bot.login('mySecret');
